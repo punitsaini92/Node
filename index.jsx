@@ -1,10 +1,10 @@
 import * as yup from "yup";
-import { object, string, number,ref, date, InferType } from "yup";
+import { string,ref, date } from "yup";
 
 
 
 const FILE_SIZE = 2 * 1024 * 1024; // 2MB in bytes
-const SUPPORTED_FORMATS = ['application/pdf']; // Supported file formats
+const SUPPORTED_FORMATS = ['application/pdf','text/plain', 'text/xml']; // Supported file formats
 
 
 
@@ -28,24 +28,32 @@ export const validationSchema = yup.object().shape({
 
   email: string()
   .email("Enter valid email")
+
   .matches(
     /^[^`~!@#$%^&*()-_=+[\]{}\\|;:'",<>/?].*$/,
     'Email cannot start with a special character'
   )
-  .test(
-    'matches-format',
-    'Invalid email format',
-    (value) =>
-      /^[^A-Z\s.][a-zA-Z0-9.]{2,}@[^\s@]+\.[^\s@]{2,}$/.test(value)
-  )
+
   .test(
     'local-part-length',
     'Local part must have at least 3 characters',
     (value) => {
       const localPart = value.split('@')[0]; // Extracting local part before @ symbol
-      return localPart.length >= 3;
+      return localPart.length >= 3 && localPart.length <= 64;
     }
   )
+  .test(
+    'domain-part-length',
+    'Domain part must be between 3 and 253 characters',
+    (value) => {
+      if (value && value.includes('@')) {
+        const domainPart = value.split('@')[1];
+        return domainPart.length >= 3 && domainPart.length <= 253;
+      }
+      return false;
+    }
+  )
+  
 
   .test(
     'zero-or-one-dot-local-part',
@@ -69,6 +77,7 @@ export const validationSchema = yup.object().shape({
       return false; // Fail validation if no '@' symbol is present
     }
   )
+ 
   .required("Email is required"),
 
 
@@ -76,6 +85,7 @@ export const validationSchema = yup.object().shape({
   // Validation for phoneNumber
   phoneNumber: yup
     .string()
+    // .min(12, 'Phone number must be at least 10 characters')
     .required('Phone number is required')
     .matches(/^(?!.*(\d)\1{3}).*$/, 'Phone number cannot have 4 repeated digits consecutively'),
 
@@ -83,7 +93,9 @@ export const validationSchema = yup.object().shape({
 
   password: string()
   .required('Password is required')
-  .min(8, 'Password must be at least 8 characters'),
+  .min(8, 'Password must be at least 8 characters')
+  .max(20, 'Password not exceed  20 characters'),
+
 
 
 
@@ -109,7 +121,9 @@ confirmPassword: string()
 
 
 
-  address: string().required('Address is required'),
+  address: string()  .required('Address is required')
+  .min(10, 'Address should be at least 10 characters')
+  .max(50, 'Address should not exceed 50 characters'),
 
 
 
@@ -137,6 +151,8 @@ confirmPassword: string()
     return value && value.size <= 2 * 1024 * 1024; // 2MB in bytes
   }),
 
+  
+
   website: string().url('Invalid URL').required('Website URL is required'),
 
   decimalNumber:
@@ -146,9 +162,14 @@ confirmPassword: string()
   .required('Decimal number is required')
   .test('is-decimal', 'Invalid decimal number', (value) => /^\d*\.?\d*$/.test(value)),
 
-    captchaResponse: string()
-    .required('Please enter the CAPTCHA value')
-    .matches(/^[0-9]{4}$/, 'Invalid CAPTCHA'),
+  captchaResponse: yup
+    .string()
+    .required("Please enter the CAPTCHA value")
+    .matches(/^[0-9]{4}$/, 'Invalid CAPTCHA')
+    .test("match-captcha", "CAPTCHA does not match", function (value) {
+      const { captcha } = this.parent;
+      return value && value.toLowerCase() === captcha.toLowerCase();
+    }),
 
     hobbies: yup.string().required('Please select at least one hobby'),
 

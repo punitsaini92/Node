@@ -10,6 +10,14 @@ import {
   Checkbox,
 } from "@mui/material";
 
+import * as React from "react";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+
+
+
 import { useFormik } from "formik";
 import { useState } from "react";
 import { validationSchema } from "../Validation";
@@ -34,6 +42,7 @@ const hobbyOptions2 = [
 
 export const Form = () => {
   const [captcha, setCaptcha] = useState(generateCaptcha());
+  const [showPassword, setShowPassword] = useState(false);
 
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -64,6 +73,7 @@ export const Form = () => {
     website: "",
     decimalNumber: "",
     captchaResponse: "",
+    captcha: captcha,
     hobbies: "",
     options: [],
     acceptTerms: false,
@@ -81,7 +91,7 @@ export const Form = () => {
   } = useFormik({
     initialValues: InitialValues,
     validationSchema: validationSchema,
-    onSubmit: (values, { setSubmitting }) => {
+    onSubmit: (values, { setSubmitting, setFieldError }) => {
       console.log("submitted", values);
 
       fileInputRef.current.value = "";
@@ -101,7 +111,6 @@ export const Form = () => {
       resetForm();
     },
   });
-
   //   console.log(formik)
   console.log(errors);
 
@@ -182,8 +191,8 @@ export const Form = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl
-                fullWidth
-                error={!!(touched.phoneNumber && errors.phoneNumber)}
+              fullWidth
+              error={!!(touched.phoneNumber && errors.phoneNumber)}
             >
               <PhoneInput
                 country={"us"}
@@ -197,10 +206,10 @@ export const Form = () => {
               )}
             </FormControl>
           </Grid>
-
           <Grid item xs={12} sm={6}>
             <TextField
-              type="password"
+              id="outlined-adornment-password"
+              type={showPassword ? "text" : "password"}
               name="password"
               label="Password"
               value={values.password}
@@ -210,6 +219,22 @@ export const Form = () => {
               fullWidth
               margin="normal"
               error={touched.password && Boolean(errors.password)}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => {
+                        e.preventDefault(); // Prevents input blur
+                      }}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             {errors.password && touched.password && (
               <p className="error">{errors.password}</p>
@@ -358,14 +383,15 @@ export const Form = () => {
               inputProps={{ inputMode: "decimal", pattern: "^\\d*\\.?\\d*$" }}
             />
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <img
               src={`https://dummyimage.com/120x40/000/fff&text=${captcha}`}
               alt="CAPTCHA"
             />
-          </Grid>
+            <br></br>
+            <br></br>
 
-          <Grid item xs={12} sm={6}>
             <TextField
               type="text"
               name="captchaResponse"
